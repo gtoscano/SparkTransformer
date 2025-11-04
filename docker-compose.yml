@@ -1,0 +1,38 @@
+services:
+  trainer:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        USERNAME: ${USERNAME}
+        UID: ${UID}
+        GID: ${GID}
+
+    gpus: all
+    ipc: host
+    shm_size: "16g"
+    working_dir: /workspace
+    stdin_open: true
+    tty: true
+
+    # Run as your host IDs so files in ./workspace are owned by you
+    user: "${UID}:${GID}"
+
+    env_file:
+      - .env
+
+    environment:
+      - HUGGINGFACE_HUB_TOKEN=${HUGGINGFACE_HUB_TOKEN}
+      - HF_TOKEN=${HUGGINGFACE_HUB_TOKEN}
+        #- HF_HOME=/home/${USERNAME}/.cache/huggingface
+        #- HUGGINGFACE_HUB_CACHE=/home/${USERNAME}/.cache/huggingface
+        #- HF_HUB_ENABLE_HF_TRANSFER=1
+        #   If using env-token auth, add to .env and uncomment:
+
+    volumes:
+      - ./workspace:/workspace
+      # Or mount your host HF cache instead of env token:
+      # - ${HOME}/.cache/huggingface:/home/${USERNAME}/.cache/huggingface
+
+    command: tail -f /dev/null
+
