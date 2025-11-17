@@ -10,12 +10,10 @@ services:
 
     gpus: all
     ipc: host
-    shm_size: "16g"
+    shm_size: "128g"
     working_dir: /workspace
     stdin_open: true
     tty: true
-
-    # Run as your host IDs so files in ./workspace are owned by you
     user: "${UID}:${GID}"
 
     env_file:
@@ -24,15 +22,89 @@ services:
     environment:
       - HUGGINGFACE_HUB_TOKEN=${HUGGINGFACE_HUB_TOKEN}
       - HF_TOKEN=${HUGGINGFACE_HUB_TOKEN}
-        #- HF_HOME=/home/${USERNAME}/.cache/huggingface
-        #- HUGGINGFACE_HUB_CACHE=/home/${USERNAME}/.cache/huggingface
-        #- HF_HUB_ENABLE_HF_TRANSFER=1
-        #   If using env-token auth, add to .env and uncomment:
-
+      - HF_HOME=/home/gtoscano/.cache/huggingface
+      - HUGGINGFACE_HUB_CACHE=/home/gtoscano/.cache/huggingface
     volumes:
       - ./workspace:/workspace
-      # Or mount your host HF cache instead of env token:
-      # - ${HOME}/.cache/huggingface:/home/${USERNAME}/.cache/huggingface
+      - /home/gtoscano/.cache/huggingface:/home/gtoscano/.cache/huggingface
 
     command: tail -f /dev/null
 
+  trtllm:
+    image: nvcr.io/nvidia/tensorrt-llm/release:1.2.0rc2
+
+    gpus: all
+    ipc: host
+    shm_size: "16g"
+
+    ulimits:
+      memlock: -1
+      stack: 67108864
+
+    ports:
+      - "8000:8000"
+
+    env_file:
+      - .env
+
+    environment:
+      - HUGGINGFACE_HUB_TOKEN=${HUGGINGFACE_HUB_TOKEN}
+
+    command: >
+      trtllm-serve
+      "TinyLlama/TinyLlama-1.1B-Chat-v1.0"
+      --host 0.0.0.0
+      --port 8000
+      --trust_remote_code
+ 
+  vllm-qlora:
+    image: nvcr.io/nvidia/vllm:25.09-py3
+    container_name: vllm-qlora
+    command: >
+      python -m vllm.entrypoints.openai.api_server
+      --model meta-llama/Llama-3.2-1B-Instruct
+      --enable-lora
+      --lora-modules imdb=/qlora-out
+      --max-model-len 2048
+      --dtype float16
+
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    ipc: host
+    ulimits:
+      memlock: -1
+      stack: 67108864
+    environment:
+      - HUGGINGFACE_HUB_TOKEN=${HUGGINGFACE_HUB_TOKEN}
+      - HF_TOKEN=${HUGGINGFACE_HUB_TOKEN}
+      - HF_HOME=/home/gtoscano/.cache/huggingface
+      - HUGGINGFACE_HUB_CACHE=/home/gtoscano/.cache/huggingface
+    volumes:
+      - ./workspace/quantization/qlora-out:/qlora-out:ro
+    ports:
+      - "8020:8000"
+    restart: unless-stopped
+
+  
+  vllm-gtp-hf-model:
+    image: nvcr.io/nvidia/vllm:25.09-py3
+    container_name: vllm-my-hf-model
+    command: >
+      vllm serve gtoscano/my-llama-qlora-imdb
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    environment:
+      HF_TOKEN: "${HF_TOKEN}"
+    ports:
+      - "8030:8000"
+    restart: unless-stopped

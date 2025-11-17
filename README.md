@@ -1,25 +1,38 @@
 # ⚡️ SparkTransformer
 
-A lightweight transformer environment for the new **NVIDIA DGX Spark™** — enabling fast experimentation, inference, and fine-tuning with Hugging Face models on GPU.*
+A lightweight transformer environment for the **NVIDIA DGX Spark™** — enabling fast experimentation, inference, and fine-tuning with Hugging Face models on GPU.
+
+This environment uses Docker + Compose with pipenv-based Python 3.12 dependency management (auto-installed on container start).
 
 ---
 
 ## 🚀 Overview
 
-**SparkTransformer** provides a reproducible **Docker + Compose** setup built on the official **NVIDIA PyTorch 25.09** container.
-It’s designed for **DGX Spark** systems and GPU-accelerated research workflows, supporting everything from model inference and evaluation to large-scale fine-tuning.
+**SparkTransformer** provides a reproducible **GPU-accelerated training stack** built on the official:
 
-Use it as a clean foundation for transformer research, classroom projects, or production experiments.
+```
+nvcr.io/nvidia/pytorch:25.09-py3
+```
+
+It is designed for:
+
+* DGX Spark GPU systems
+* Transformer research & classroom use
+* LoRA / QLoRA fine-tuning
+* Fast prototyping for Hugging Face models
+* Python 3.12 development in a clean containerized workspace
 
 ---
 
 ## ✨ Features
 
-✅ Optimized for **NVIDIA DGX Spark™** (CUDA 13 / PyTorch 2.5)
-✅ Preinstalled: `transformers`, `peft`, `datasets`, `trl`, `bitsandbytes`, `accelerate`
-✅ Hugging Face authentication (token or mounted cache)
-✅ User-mapped UID/GID for clean file ownership
-✅ Extensible workspace for notebooks and experiments
+✅ NVIDIA PyTorch 25.09 (CUDA 12.4, PyTorch 2.5, Python 3.12)
+✅ Preinstalled: `transformers`, `datasets`, `accelerate`, `peft`, `trl`, `bitsandbytes`
+✅ **pipenv auto-installation**: on every container start, if `/workspace/Pipfile` exists it installs dependencies
+✅ UID/GID passthrough to keep file permissions clean
+✅ Hugging Face token support for gated models
+✅ Supports LoRA & QLoRA training on Qwen 2.5, LLaMA, Mistral, etc.
+✅ Extensible layout for notebooks, scripts, and training modules
 
 ---
 
@@ -31,108 +44,138 @@ SparkTransformer/
 ├── docker-compose.yml
 ├── .env
 └── workspace/
+    ├── Pipfile
+    ├── train.py
+    ├── train_lora.py
     ├── notebooks/
-    ├── examples/
-    └── dgx-spark-playbooks/
+    └── examples/
 ```
+
+> Everything inside `workspace/` is mapped to `/workspace` in the container —
+> this is where training and development occur.
 
 ---
 
-## ⚙️ 1. Environment Setup
+# ⚙️ 1. Environment Setup
 
 Create a `.env` file in the project root:
 
 ```bash
 USERNAME=gtoscano
-UID=1000
-GID=1000
+UID=$(id -u)
+GID=$(id -g)
 HUGGINGFACE_HUB_TOKEN=hf_xxx_your_token_here
 ```
 
-> 🔐 Keep `.env` out of version control.
-> Your Hugging Face token must have access to gated models (e.g., Meta Llama 3).
+✔ Keeps HF keys out of your environment
+✔ UID/GID ensure correct file permissions
 
 ---
 
-## 🐋 2. Build & Start the DGX Spark Container
+# 🐋 2. Build & Start the DGX Spark Environment
 
 ```bash
 docker compose build
 docker compose up -d
 ```
 
+On startup, the container will:
+
+* enter `/workspace`
+* detect your `Pipfile`
+* run:
+
+```bash
+pipenv install --deploy --system
+```
+
+You will see a message like:
+
+```
+[entrypoint] Pipfile detected in /workspace. Installing dependencies via pipenv…
+```
+
 ---
 
-## 🔑 3. Verify Authentication
+# 🧠 3. Verify the Environment
+
+Test CUDA + HuggingFace:
 
 ```bash
 docker compose exec trainer bash -lc 'python - <<PY
-import os
-from huggingface_hub import HfApi
+import torch; from huggingface_hub import HfApi; import os
+print("CUDA:", torch.cuda.is_available())
 api = HfApi()
-print("Token present:", bool(os.getenv("HUGGINGFACE_HUB_TOKEN")))
 info = api.model_info("bert-base-uncased", token=os.getenv("HUGGINGFACE_HUB_TOKEN"))
-print("Model loaded:", info.modelId)
+print("HF OK:", info.modelId)
 PY'
-```
-
-Expected:
-
-```
-Token present: True
-Model loaded: bert-base-uncased
 ```
 
 ---
 
-## 🧠 4. Run Transformer Workloads
+# 🧪 4. Training Examples (Python 3.12)
 
-### ▶ Text Generation (Inference)
+Two training scripts are included in **workspace/**:
+
+---
+
+## ▶ `train.py` — Supervised Fine-Tuning (IMDB)
+
+```bash
+docker compose exec trainer python train.py
+```
+
+This script loads IMDB, tokenizes with DistilBERT, and fine-tunes for classification.
+
+---
+
+## 🧩 `train_lora.py` — LoRA Fine-Tuning (Qwen 2.5)
+
+```bash
+docker compose exec trainer python train_lora.py
+```
+
+This script:
+
+* loads **Qwen2.5-0.5B**
+* applies **LoRA adapters** via PEFT
+* trains on IMDB sentiment data
+
+Works out-of-the-box on DGX Spark GPU systems.
+
+---
+
+# 🧠 5. Run Arbitrary Transformers Workloads
+
+### Text Generation Example
 
 ```bash
 docker compose exec trainer bash -lc 'python - <<PY
 from transformers import pipeline
 pipe = pipeline("text-generation", model="mistralai/Mistral-7B-Instruct-v0.2")
-print(pipe("The future of AI research is")[0]["generated_text"])
+print(pipe("The future of GPU AI is")[0]["generated_text"])
 PY'
 ```
 
-### 🧩 Fine-Tuning (Example with Llama 3)
+---
 
-Clone NVIDIA’s fine-tuning recipes inside your workspace:
+# 📓 6. Notebooks and Scripts
 
-```bash
-git clone https://github.com/NVIDIA/dgx-spark-playbooks ./workspace/dgx-spark-playbooks
+Place your notebooks or scripts inside:
+
+```
+workspace/notebooks/
 ```
 
-Run any recipe:
+Inside the container:
 
 ```bash
-docker compose exec trainer \
-  python workspace/dgx-spark-playbooks/nvidia/pytorch-fine-tune/assets/Llama3_8B_LoRA_finetuning.py
+docker compose exec trainer python notebooks/my_notebook.py
 ```
 
 ---
 
-## 🧪 5. Your Own Experiments
-
-Place notebooks or scripts in `workspace/`:
-
-```
-workspace/
-└── notebooks/
-    └── summarization.ipynb
-```
-
-Run them inside the DGX Spark container:
-
-```bash
-docker compose exec trainer python notebooks/summarization.py
-```
-
----
-
-## 🧹 6. Shut Down
+# 🧹 7. Shut Down
 
 ```bash
 docker compose down
@@ -140,51 +183,58 @@ docker compose down
 
 ---
 
-## 🧰 Utilities
+# 🧰 Utilities
 
-| Purpose                | Command                                                                                                       |
-| ---------------------- | ------------------------------------------------------------------------------------------------------------- |
-| Test CUDA availability | `docker compose exec trainer python -c "import torch; print(torch.cuda.is_available())"`                      |
-| Update packages        | `docker compose exec trainer pip install -U transformers peft datasets trl bitsandbytes accelerate`           |
-| Remove pynvml warning  | `docker compose exec trainer pip uninstall -y pynvml && docker compose exec trainer pip install nvidia-ml-py` |
-
----
-
-## 🧩 Quickstart Recap
-
-| Step | Command                                    | Description           |
-| ---- | ------------------------------------------ | --------------------- |
-| 1    | `echo "HUGGINGFACE_HUB_TOKEN=..." >> .env` | Add your HF token     |
-| 2    | `docker compose build`                     | Build DGX Spark image |
-| 3    | `docker compose up -d`                     | Start container       |
-| 4    | `git clone ...workspace/...`               | Get examples          |
-| 5    | `docker compose exec trainer python ...`   | Run transformers      |
+| Purpose                     | Command                                                                                         |
+| --------------------------- | ----------------------------------------------------------------------------------------------- |
+| Test CUDA availability      | `docker compose exec trainer python -c "import torch; print(torch.cuda.is_available())"`        |
+| Run default training script | `docker compose exec trainer python train.py`                                                   |
+| Run LoRA training           | `docker compose exec trainer python train_lora.py`                                              |
+| Update installed libraries  | `docker compose exec trainer pip install -U transformers datasets accelerate peft bitsandbytes` |
+| Verify pipenv was applied   | `docker compose exec trainer pip list`                                                          |
 
 ---
 
-## 💡 Tips
+# 🧩 Quickstart Recap
 
-* For large-scale training, expand `docker-compose.yml` to multiple GPU services.
-* Store datasets and checkpoints in mounted volumes under `workspace/`.
-* Keep `.env` private and regenerate tokens if you rotate HF keys.
+| Step | Command                            | Description                |
+| ---- | ---------------------------------- | -------------------------- |
+| 1    | Add HF token to `.env`             | Gives access to HF models  |
+| 2    | `docker compose build`             | Build DGX Spark image      |
+| 3    | `docker compose up -d`             | Start environment          |
+| 4    | Add `Pipfile` to `workspace/`      | Auto-installs dependencies |
+| 5    | `docker compose exec trainer bash` | Enter environment          |
+| 6    | `python train.py`                  | Run a training example     |
 
 ---
 
-## 🏁 Example Quick Run
+# 💡 Tips
+
+* Store datasets and checkpoints inside `workspace/` (this persists on the host).
+* Use pipenv in the host only to generate `Pipfile` + `Pipfile.lock`; installation happens in the container.
+* For multi-GPU training, scale docker-compose services or use `torchrun`.
+
+---
+
+# 🏁 Example Quick Run
 
 ```bash
 git clone https://github.com/gtoscano/SparkTransformer.git
 cd SparkTransformer
-cp .env.example .env  # add UID/GID/token
+
+# Create .env with UID/GID and HF token
+cp .env.example .env
+
 docker compose up -d
-docker compose exec trainer python workspace/examples/text_generation.py
+
+# Run LoRA training
+docker compose exec trainer python train_lora.py
 ```
 
 ---
 
-**Project:** [gtoscano/SparkTransformer](https://github.com/gtoscano/SparkTransformer)
+**Project:** gtoscano/SparkTransformer
 **Platform:** NVIDIA DGX Spark™
 **Base Image:** `nvcr.io/nvidia/pytorch:25.09-py3`
 **License:** MIT
 **Author:** Gregorio Toscano
-
