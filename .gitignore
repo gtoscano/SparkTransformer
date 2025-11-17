@@ -1,6 +1,7 @@
 # Byte-compiled / optimized / DLL files
 .env
 trt-models/*
+qlora-out/*
 Pipfile.lock
 __pycache__/
 *.py[codz]

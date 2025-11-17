@@ -69,7 +69,9 @@ RUN pip install --upgrade pip && \
       onnx \
       onnxruntime-tools \
       optimum-onnx \
-      pandas 
+      pandas \
+      pytz \
+      pyarrow
      
 
 # If you want vLLM in this same image, uncomment:
