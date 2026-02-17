@@ -35,7 +35,10 @@ def main() -> None:
 
     dataset = load_dataset(args.dataset_id, split="train")
     dataset = dataset.filter(
-        lambda x: x.get("act") is not None and x.get("prompt") is not None
+        lambda x: isinstance(x.get("act"), str)
+        and isinstance(x.get("prompt"), str)
+        and x["act"].strip() != ""
+        and x["prompt"].strip() != ""
     )
     dataset = dataset.select(range(min(args.max_train_samples, len(dataset))))
 

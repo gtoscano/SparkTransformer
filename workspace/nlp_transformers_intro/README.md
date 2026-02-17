@@ -193,7 +193,12 @@ def build_source_text(act_text: str) -> str:
     )
 
 dataset = load_dataset(dataset_id, split="train")
-dataset = dataset.filter(lambda x: x.get("act") is not None and x.get("prompt") is not None)
+dataset = dataset.filter(
+    lambda x: isinstance(x.get("act"), str)
+    and isinstance(x.get("prompt"), str)
+    and x["act"].strip() != ""
+    and x["prompt"].strip() != ""
+)
 dataset = dataset.select(range(min(1000, len(dataset))))
 
 tokenizer = AutoTokenizer.from_pretrained(model_id)
@@ -256,7 +261,14 @@ query = (
 
 inputs = tokenizer(query, return_tensors="pt", truncation=True)
 with torch.no_grad():
-    output_ids = model.generate(**inputs, max_new_tokens=120, num_beams=4)
+    output_ids = model.generate(
+        **inputs,
+        max_new_tokens=120,
+        min_new_tokens=12,
+        num_beams=4,
+        no_repeat_ngram_size=3,
+        early_stopping=True,
+    )
 
 print("Goal:")
 print(goal)

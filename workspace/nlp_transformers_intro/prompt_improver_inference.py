@@ -1,9 +1,37 @@
 import argparse
+import re
 
 # python prompt_improver_inference.py --goal "Create a prompt to teach attention mechanism to beginners"
 
 import torch
 from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
+
+
+def normalize_line(text: str) -> str:
+    text = " ".join(text.split())
+    # Collapse immediate repeated words like "clear, clear"
+    return re.sub(r"\b(\w+)([\s,.;:]+)\1\b", r"\1", text, flags=re.IGNORECASE)
+
+
+def cleanup_generation(text: str) -> str:
+    text = text.strip()
+    if not text:
+        return text
+
+    parts = [p.strip(" -\t") for p in re.split(r"\s+-\s+", text) if p.strip(" -\t")]
+    if len(parts) <= 1:
+        return normalize_line(text)
+
+    unique = []
+    seen = set()
+    for part in parts:
+        line = normalize_line(part)
+        key = line.lower()
+        if key and key not in seen:
+            seen.add(key)
+            unique.append(line)
+
+    return "\n".join(f"- {line}" for line in unique)
 
 
 def main() -> None:
@@ -30,11 +58,33 @@ def main() -> None:
         output_ids = model.generate(
             **inputs,
             max_new_tokens=args.max_new_tokens,
-            num_beams=4,
-            early_stopping=True,
+            min_new_tokens=12,
+            do_sample=True,
+            temperature=0.75,
+            top_p=0.9,
+            top_k=50,
+            repetition_penalty=1.35,
+            no_repeat_ngram_size=4,
         )
 
-    improved = tokenizer.decode(output_ids[0], skip_special_tokens=True)
+    improved = tokenizer.decode(output_ids[0], skip_special_tokens=True).strip()
+    improved = cleanup_generation(improved)
+    if not improved:
+        with torch.no_grad():
+            output_ids = model.generate(
+                **inputs,
+                max_new_tokens=args.max_new_tokens,
+                min_new_tokens=12,
+                do_sample=True,
+                temperature=0.85,
+                top_p=0.92,
+                top_k=80,
+                repetition_penalty=1.25,
+                no_repeat_ngram_size=3,
+            )
+        improved = tokenizer.decode(output_ids[0], skip_special_tokens=True).strip()
+        improved = cleanup_generation(improved)
+
     print("\nOriginal goal:")
     print(args.goal)
     print("\nImproved prompt:")
