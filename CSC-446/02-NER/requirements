@@ -1,0 +1,10 @@
+requests
+beautifulsoup4
+lxml
+pandas
+matplotlib
+transformers
+torch
+sentencepiece
+tiktoken
+tokenizers<0.20
