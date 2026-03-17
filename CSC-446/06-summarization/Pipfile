@@ -1,0 +1,28 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+torch = "*"
+torchvision = "*"
+torchaudio = "*"
+transformers = "*"
+datasets = "*"
+scikit-learn = "*"
+matplotlib = "*"
+evaluate = "*"
+accelerate = "*"
+nltk = "*"
+protobuf = "*"
+tiktoken = "*"
+sentencepiece = "*"
+bs4 = "*"
+rouge-score = "*"
+absl-py = "*"
+sacrebleu = "*"
+
+[dev-packages]
+
+[requires]
+python_version = "3.11"
