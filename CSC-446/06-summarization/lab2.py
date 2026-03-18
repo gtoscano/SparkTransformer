@@ -4,6 +4,8 @@ import evaluate
 from tqdm import tqdm
 import os
 
+from hf_auth import get_hf_token
+
 N_SAMPLES = 50
 GEN_KW = dict(max_new_tokens=200, do_sample=False)
 
@@ -23,10 +25,11 @@ MODELS = {
 }
 
 def build_pipe(model_id, task, tokenizer_id=None):
+    token = get_hf_token(required=True)
     tok = None
     if tokenizer_id:
-        tok = AutoTokenizer.from_pretrained(tokenizer_id, use_fast=True)
-    return pipeline(task, model=model_id, tokenizer=tok, device_map="auto")
+        tok = AutoTokenizer.from_pretrained(tokenizer_id, use_fast=True, token=token)
+    return pipeline(task, model=model_id, tokenizer=tok, device_map="auto", token=token)
 
 def generate_summary(pipe, article, prompt_tmpl, split_on):
     prompt = prompt_tmpl.format(article=article)
@@ -66,4 +69,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

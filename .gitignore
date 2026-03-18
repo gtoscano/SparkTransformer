@@ -2,6 +2,7 @@
 workspace/quantization/qlora-out/
 prompt-improver-t5-small
 .env
+CSC-446/06-summarization/token.md
 trt-models/*
 qlora-out/*
 Pipfile.lock

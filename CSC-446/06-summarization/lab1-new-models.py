@@ -3,6 +3,8 @@ from transformers import pipeline
 import evaluate
 import re
 
+from hf_auth import get_hf_token
+
 # -----------------------
 # Config (change if needed)
 # -----------------------
@@ -27,6 +29,8 @@ def clean_text(s: str) -> str:
 
 
 def main():
+    token = get_hf_token(required=True)
+
     # Load data
     ds = load_dataset("abisee/cnn_dailymail", "3.0.0", split=TEST_SPLIT)
     articles = ds["article"]
@@ -42,6 +46,7 @@ def main():
             "summarization",
             model=model_id,
             device_map="auto",
+            token=token,
         )
 
         preds = []
@@ -71,4 +76,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

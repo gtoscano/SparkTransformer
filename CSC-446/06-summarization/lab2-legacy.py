@@ -28,6 +28,7 @@ from typing import List, Tuple
 
 import torch
 from datasets import load_dataset
+from hf_auth import get_hf_token
 from transformers import (
     AutoTokenizer,
     pipeline,
@@ -75,11 +76,12 @@ def build_summarizer(model_id: str, device: int):
     Build a summarization pipeline with a tokenizer clamp to avoid
     extreme sequence lengths that can trigger SDPA/flash attention issues.
     """
-    tok = AutoTokenizer.from_pretrained(model_id, use_fast=True)
+    token = get_hf_token()
+    tok = AutoTokenizer.from_pretrained(model_id, use_fast=True, token=token)
     # Keep encoder inputs <= 1024 tokens for safety (common for BART/PEGASUS)
     tok.model_max_length = min(getattr(tok, "model_max_length", 1024) or 1024, 1024)
     tok.truncation_side = "right"
-    return pipeline("summarization", model=model_id, tokenizer=tok, device=device)
+    return pipeline("summarization", model=model_id, tokenizer=tok, device=device, token=token)
 
 
 def trim_for_encoder(text: str, max_chars: int = 4000) -> str:
@@ -108,6 +110,7 @@ def safe_summarize(pipe, text: str, **gen_kw) -> str:
                 model=pipe.model,
                 tokenizer=pipe.tokenizer,
                 device=-1,
+                token=get_hf_token(),
             )
             return cpu_pipe(text, **gen_kw)[0]["summary_text"]
         raise
@@ -193,4 +196,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

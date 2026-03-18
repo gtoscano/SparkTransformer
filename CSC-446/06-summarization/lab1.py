@@ -1,5 +1,7 @@
-from transformers import pipeline, AutoTokenizer
 import os
+from transformers import AutoTokenizer, pipeline
+
+from hf_auth import get_hf_token
 
 # Disable HF telemetry
 os.environ["HF_HUB_DISABLE_TELEMETRY"] = "1"
@@ -24,10 +26,11 @@ GEN_KW = dict(max_new_tokens=250, do_sample=False, temperature=0.2)
 
 
 def build_pipe(model_id, task, tokenizer_id=None):
+    token = get_hf_token(required=True)
     tok = None
     if tokenizer_id:
-        tok = AutoTokenizer.from_pretrained(tokenizer_id, use_fast=True)
-    return pipeline(task, model=model_id, tokenizer=tok, device_map="auto")
+        tok = AutoTokenizer.from_pretrained(tokenizer_id, use_fast=True, token=token)
+    return pipeline(task, model=model_id, tokenizer=tok, device_map="auto", token=token)
 
 
 def generate_summary(pipe, text, prompt_tmpl, split_on):
@@ -55,4 +58,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

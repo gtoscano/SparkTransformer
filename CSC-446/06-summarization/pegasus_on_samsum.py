@@ -1,4 +1,5 @@
 from datasets import load_dataset
+from hf_auth import get_hf_token
 from transformers import (
     AutoModelForSeq2SeqLM, PegasusTokenizer,
     DataCollatorForSeq2Seq, Seq2SeqTrainingArguments, Trainer, Seq2SeqTrainer 
@@ -6,8 +7,9 @@ from transformers import (
 
 # 1) ids vs objects
 model_id  = "google/pegasus-cnn_dailymail"
-tokenizer = PegasusTokenizer.from_pretrained(model_id,  use_fast=False)       # requires `sentencepiece`
-model     = AutoModelForSeq2SeqLM.from_pretrained(model_id)  # <-- model OBJECT
+token = get_hf_token()
+tokenizer = PegasusTokenizer.from_pretrained(model_id, use_fast=False, token=token)       # requires `sentencepiece`
+model     = AutoModelForSeq2SeqLM.from_pretrained(model_id, token=token)  # <-- model OBJECT
 
 # 2) data (SAMSum)
 ds = load_dataset("knkarthick/samsum")
@@ -51,4 +53,3 @@ trainer = Seq2SeqTrainer(
 
 trainer.train()
 print(trainer.evaluate(tok["test"]))
-

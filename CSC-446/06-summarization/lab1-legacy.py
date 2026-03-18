@@ -1,4 +1,5 @@
 from transformers import pipeline
+from hf_auth import get_hf_token
 # Read the file
 with open("cua.txt", "r", encoding="utf-8") as f:
     text = f.read()
@@ -7,8 +8,7 @@ models = ["t5-small", "facebook/bart-large-cnn", "google/pegasus-cnn_dailymail"]
 
 # Run summarization for each model
 for m in models:
-    summarizer = pipeline("summarization", model=m, device=0)
+    summarizer = pipeline("summarization", model=m, device=0, token=get_hf_token())
     chunk = text[:2000]
     summary = summarizer(chunk, max_new_tokens=512, do_sample=False)[0]["summary_text"]
     print(f"\n--- {m} ---\n{summary}\n")
-
