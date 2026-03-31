@@ -1,0 +1,21 @@
+course_id,title,section,credits,level,when_offered,room,instructor,dates,status
+CSC 104,Introduction to Computers I,01-LEC,3,100,TBA (Online async),ONLINE ASYNCHRONOUS,Hanney Shaban,01/13/2025–05/10/2025,Open
+CSC 107,Introduction to Computer Security,01-LEC,3,100,TBA (Online async),ONLINE ASYNCHRONOUS,Hanney Shaban,01/13/2025–05/10/2025,Open
+CSC 113,Introduction to Computer Programming with MATLAB,01-LEC,3,100,MoWe 2:10PM–3:25PM,Pangborn G023,Gregory Behrmann,01/13/2025–05/10/2025,Open
+CSC 124,Introduction to Computer Programming with Python,01-LEC,3,100,WeFr 10:40AM–11:55AM,Pangborn 303,Gregorio Toscano Pulido,01/13/2025–05/10/2025,Open
+CSC 223,Object-Oriented Programming with Java,01-LEC,3,200,TuTh 11:10AM–12:25PM,Pangborn 301,Matthew Jacobs,01/13/2025–05/10/2025,Open
+CSC 306,Introduction to Operating Systems,01-LEC,3,300,TuTh 2:10PM–3:25PM,Pangborn 303,Dominick Rizk,01/13/2025–05/10/2025,Open
+CSC 322,Introduction to Computer Graphics,01-LEC,3,300,MoWe 2:10PM–3:25PM,Pangborn G024,Hieu Trung Bui,01/13/2025–05/10/2025,Open
+CSC 323,Introduction to Computer Networks,01-LEC,3,300,TuTh 6:40PM–7:55PM,Pangborn G035,Sharif Khalil; Gahana Majumdar,01/13/2025–05/10/2025,Open
+CSC 326,Switching Circuits and Logic Design,01-LEC,3,300,TuTh 12:40PM–1:55PM,Gowan 401,Dominick Rizk,01/13/2025–05/10/2025,Open
+CSC 327,Switching Circuits and Logic Design Laboratory,01-LAB,1,300,TuTh 3:40PM–4:55PM,Pangborn 207,Thuc Phan,01/13/2025–05/10/2025,Open
+CSC 363,Software Engineering,01-LEC,3,300,WeFr 11:10AM–12:25PM,Pangborn G022,Matthew Jacobs,01/13/2025–05/10/2025,Open
+CSC 406,Introduction to Secure Computing,01-LEC,3,400,WeFr 3:40PM–4:55PM,Pangborn 303,Gregorio Toscano Pulido,01/13/2025–05/10/2025,Open
+CSC 409,Web Design & Programming,01-LEC,3,400,We 5:10PM–7:40PM,Pangborn 301,Vladimir Kirnosov,01/13/2025–05/10/2025,Open
+CSC 411,Analysis of Algorithms,01-LEC,3,400,TuTh 3:40PM–4:55PM,Pangborn 303,Minhee Jun; Andrew Heller,01/13/2025–05/10/2025,Open
+CSC 423,Business Data Analytics,01-LEC,3,400,We 5:10PM–7:40PM,ONLINE,Aysegul Cuhadar,01/13/2025–05/10/2025,Closed
+CSC 430,Introduction to Data Analysis,01-LEC,3,400,We 5:10PM–7:40PM,Pangborn G023,Chaofan Sun,01/13/2025–05/10/2025,Open
+CSC 435,Introduction to Deep Learning,01-LAB,1,400,Fr 5:10PM–7:40PM,Pangborn 301,Chaofan Sun,01/13/2025–05/10/2025,Open
+CSC 445,Introduction to Data Mining,01-LEC,3,400,Th 5:10PM–7:40PM,Pangborn G023,Minhee Jun; Andrew Heller,01/13/2025–05/10/2025,Closed
+CSC 484,Introduction to Machine Learning,01-LEC,3,400,Mo 5:10PM–7:40PM,Pangborn G023,Chaofan Sun; Sairam Reddy Korimilla,01/13/2025–05/10/2025,Open
+CSC 484,Introduction to Machine Learning,02-LEC,3,400,Mo 12:40PM–3:10PM,Pangborn 302,Chaofan Sun; Sairam Reddy Korimilla,01/13/2025–05/10/2025,Open
