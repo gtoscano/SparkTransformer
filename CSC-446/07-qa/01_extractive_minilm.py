@@ -5,6 +5,8 @@ from transformers.utils.logging import set_verbosity_error
 set_verbosity_error()
 MODEL_ID = "deepset/minilm-uncased-squad2"
 
+MODEL_ID="HuggingFaceH4/zephyr-7b-beta"
+
 
 def main():
     tokenizer = AutoTokenizer.from_pretrained(MODEL_ID)

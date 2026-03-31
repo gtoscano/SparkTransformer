@@ -1,0 +1,27 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+streamlit = "*"
+pandas = "*"
+langchain-openai = "*"
+faiss-cpu = "*"
+langchain-community = "*"
+langchain = "*"
+transformers = "*"
+torch = "*"
+accelerate = "*"
+run = "*"
+torchvision = "*"
+langchain-core = "*"
+haystack = "*"
+haystack-ai = {extras = ["huggingface"], version = "*"}
+sentence-transformers = "*"
+chromadb = "*"
+
+[dev-packages]
+
+[requires]
+python_version = "3.11"

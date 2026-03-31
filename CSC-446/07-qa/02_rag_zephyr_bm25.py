@@ -38,7 +38,7 @@ pipe.connect("prompt", "llm.prompt")
 
 
 def main():
-    question = "Where is CUA located?"
+    question = "What can you tell me about the Vatican?"#"Where is CUA located?"
     result = pipe.run({
         "retriever": {"query": question},
         "prompt": {"question": question},
