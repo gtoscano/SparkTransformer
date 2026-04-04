@@ -1,0 +1,83 @@
+services:
+  vllm:
+    #image: nvcr.io/nvidia/vllm:25.10-py3
+    image: vllm/vllm-openai:latest
+    container_name: vllm
+
+    command: >
+      vllm serve "Qwen/Qwen3-VL-30B-A3B-Thinking-FP8"
+      --host 0.0.0.0
+      --port 8000
+      --trust-remote-code
+      --gpu-memory-utilization 0.85
+      --max-num-seqs 128
+      --enable-prefix-caching
+      --enable-chunked-prefill
+      --max-num-batched-tokens 4096
+      --disable-log-requests
+      --tensor-parallel-size 1
+
+    ports:
+      - "8355:8000"
+
+    dns:
+      - 1.1.1.1
+      - 8.8.8.8
+
+    network_mode: "bridge"
+
+    # DGX-optimized settings
+    ipc: host
+    shm_size: '32gb'
+
+    ulimits:
+      memlock: -1
+      stack: 67108864
+
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu, compute, utility]
+
+    environment:
+      # Hugging Face
+      - HUGGINGFACE_HUB_TOKEN=${HUGGINGFACE_HUB_TOKEN}
+      - HF_TOKEN=${HUGGINGFACE_HUB_TOKEN}
+      - HF_HOME=/workspace/.cache/huggingface
+
+      # Suppress warnings
+      - PYTHONWARNINGS=ignore::FutureWarning
+      - PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True,max_split_size_mb:512
+      - TORCH_NCCL_AVOID_RECORD_STREAMS=1
+
+      # CUDA optimizations for DGX
+      - CUDA_DEVICE_ORDER=PCI_BUS_ID
+      - NCCL_DEBUG=WARN
+      - NCCL_IB_DISABLE=0
+      - NCCL_NET_GDR_LEVEL=5
+
+      # vLLM optimizations
+      - VLLM_ATTENTION_BACKEND=FLASHINFER
+      - VLLM_USE_TRITON_FLASH_ATTN=1
+      - VLLM_ALLOW_LONG_MAX_MODEL_LEN=1
+      # Reduce logging (optional)
+      # - VLLM_LOGGING_LEVEL=WARNING
+
+    volumes:
+      # Use workspace for model cache on DGX
+      #- /raid/users/${USER}/.cache/huggingface:/workspace/.cache/huggingface
+      # Or use your home directory
+      - ~/.cache/huggingface:/workspace/.cache/huggingface
+
+    restart: unless-stopped
+
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 90s
+

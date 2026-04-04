@@ -1,0 +1,42 @@
+services:
+  trtllm-common-server:
+    image: nvcr.io/nvidia/tensorrt-llm/release:1.2.0rc4
+    container_name: trtllm_common_server
+    command:
+      - bash
+      - -c
+      - |
+        set -ex
+
+        cat > /tmp/extra-llm-api-config.yml <<'EOFCONFIG'
+        print_iter_log: false
+        kv_cache_config:
+          dtype: "auto"
+          free_gpu_memory_fraction: 0.9
+        cuda_graph_config:
+          enable_padding: true
+        disable_overlap_scheduler: true
+        EOFCONFIG
+
+        exec trtllm-serve "$$MODEL_HANDLE" \
+          --max_batch_size 64 \
+          --trust_remote_code \
+          --host 0.0.0.0 \
+          --port 8355 \
+          --extra_llm_api_options /tmp/extra-llm-api-config.yml
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    environment:
+      - HF_TOKEN=${HUGGINGFACE_HUB_TOKEN}
+      - MODEL_HANDLE=nvidia/Phi-4-reasoning-plus-FP4
+    volumes:
+      - ${HOME}/.cache/huggingface/:/root/.cache/huggingface/
+    ports:
+      - "8355:8355"
+    restart: unless-stopped
+
