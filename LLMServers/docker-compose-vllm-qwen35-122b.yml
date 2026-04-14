@@ -1,13 +1,13 @@
-# Run with: docker compose -f docker-compose-vllm.yml up
+# Run with: docker compose -f docker-compose-vllm-qwen35-122b.yml up
+# Runs on GPU 1, port 8356 — graduate students, higher quality
+# Can run alongside docker-compose-vllm-qwen35.yml (35B on GPU 0, port 8355)
 services:
-  vllm:
-    #image: nvcr.io/nvidia/vllm:25.10-py3
+  vllm-qwen35-122b:
     image: vllm/vllm-openai:latest
-    container_name: vllm
+    container_name: vllm-qwen35-122b
 
-    # Alternative model: Qwen/Qwen3-VL-30B-A3B-Thinking-FP8
     command:
-      - "RedHatAI/Qwen3-Coder-Next-NVFP4"
+      - "Sehyo/Qwen3.5-122B-A10B-NVFP4"
       - "--host"
       - "0.0.0.0"
       - "--port"
@@ -16,20 +16,20 @@ services:
       - "--gpu-memory-utilization"
       - "0.95"
       - "--max-model-len"
-      - "32768"
+      - "8192"
       - "--max-num-seqs"
       - "128"
       - "--enable-prefix-caching"
       - "--enable-chunked-prefill"
       - "--max-num-batched-tokens"
-      - "16384"
+      - "8192"
       - "--tensor-parallel-size"
       - "1"
       - "--reasoning-parser"
       - "qwen3"
 
     ports:
-      - "8355:8000"
+      - "8356:8000"
 
     dns:
       - 1.1.1.1
@@ -37,7 +37,6 @@ services:
 
     network_mode: "bridge"
 
-    # DGX-optimized settings
     ipc: host
     shm_size: '32gb'
 
@@ -50,28 +49,20 @@ services:
         reservations:
           devices:
             - driver: nvidia
-              device_ids: ["0"]
+              device_ids: ["1"]
               capabilities: [gpu, compute, utility]
 
     environment:
-      # Hugging Face
       - HUGGINGFACE_HUB_TOKEN=${HUGGINGFACE_HUB_TOKEN}
       - HF_TOKEN=${HUGGINGFACE_HUB_TOKEN}
       - HF_HOME=/workspace/.cache/huggingface
-
-      # Suppress warnings
       - PYTHONWARNINGS=ignore::FutureWarning
-      - PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True,max_split_size_mb:512
-
-      # CUDA optimizations
+      - PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
       - CUDA_DEVICE_ORDER=PCI_BUS_ID
       - CUDA_VISIBLE_DEVICES=0
       - NCCL_DEBUG=WARN
 
     volumes:
-      # Use workspace for model cache on DGX
-      #- /raid/users/${USER}/.cache/huggingface:/workspace/.cache/huggingface
-      # Or use your home directory
       - ~/.cache/huggingface:/workspace/.cache/huggingface
 
     restart: unless-stopped
@@ -81,5 +72,4 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 90s
-
+      start_period: 120s

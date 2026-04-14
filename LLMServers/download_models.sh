@@ -1,4 +1,6 @@
 #!/bin/bash
+# Run with: ./download_models.sh <model-name>
+# Example:  ./download_models.sh RedHatAI/Qwen3-Coder-Next-NVFP4
 source .env
 
 docker run --rm -it \
@@ -6,14 +8,21 @@ docker run --rm -it \
   -e HUGGINGFACE_HUB_TOKEN=${HUGGINGFACE_HUB_TOKEN} \
   -e HF_TOKEN=${HUGGINGFACE_HUB_TOKEN} \
   -e NGC_API_KEY={NGC_API_KEY} \
-  nvcr.io/nvidia/vllm:25.09-py3 \
+  nvcr.io/nvidia/vllm:26.03-py3 \
   bash -c "hf download $1"
 
 # chmod +x download-models.sh
 
 # Use it to download any model:
-# ./download-models.sh deepseek-ai/deepseek-coder-V2-Lite-Instruct
-# ./download-models.sh meta-llama/Llama-3.1-70B-Instruct
+# ./download_models.sh deepseek-ai/deepseek-coder-V2-Lite-Instruct
+# ./download_models.sh meta-llama/Llama-3.1-70B-Instruct
+# ./download_models.sh nvidia/gpt-oss-puzzle-88B 
+# ./download_models.sh RedHatAI/Qwen3-Coder-Next-NVFP4
+# ./download_models.sh Firworks/Devstral-Small-2-24B-Instruct-2512-nvfp4
+# ./download_models.sh Sehyo/Qwen3.5-35B-A3B-NVFP4
+# ./download_models.sh Sehyo/Qwen3.5-122B-A10B-NVFP4
+ 
+#
 #       # Use Case   | 16GB NVIDIA (TRT)                       | 16GB AMD/vLLM
 # Coding  #1 | NVFP4/Qwen3-Coder-30B-A3B-Instruct-FP4  | Qwen/Qwen2.5-Coder-7B-Instruct
 # Coding  #2 | nvidia/Qwen3-14B-NVFP4                  | deepseek-ai/deepseek-coder-6.7b-instruct

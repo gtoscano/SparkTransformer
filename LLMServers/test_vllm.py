@@ -9,24 +9,12 @@ import time
 import json
 from typing import Dict, Any
 
-# Configuration
-VLLM_URL = "http://localhost:8000/v1/completions"
-VLLM_URL = "http://localhost:8355/v1/completions"
-VLLM_HEALTH_URL = "http://localhost:8000/health"
-VLLM_HEALTH_URL = "http://localhost:8355/health"
-# MODEL = "allenai/OLMo-3-32B-Think"
-# MODEL = "meta-llama/Llama-3.1-8B-Instruct"
-# MODEL = "HuggingFaceH4/zephyr-7b-beta"
-# MODEL = "Qwen/Qwen3-Coder-30B-A3B-Instruct-FP8"
-# MODEL = "Qwen/Qwen2.5-Coder-14B-Instruct"
-# MODEL = "Qwen/Qwen3-30B-A3B-Instruct-2507-FP8"
-# MODEL = "nvidia/Llama-3_3-Nemotron-Super-49B-v1_5-NVFP4"
-# MODEL = "nvidia/NVIDIA-Nemotron-Nano-12B-v2"
-# MODEL = "nvidia/Llama-3.3-70B-Instruct-FP8"
-# MODEL = "nvidia/Qwen3-32B-NVFP4"
-# MODEL = "nvidia/Qwen3-30B-A3B-NVFP4"
-# MODEL = "deepseek-ai/DeepSeek-Coder-V2-Lite-Instruct"
-MODEL = "openai/gpt-oss-20b"
+# Configuration — model is auto-detected from the running server
+BASE_URL = "http://localhost:8355"
+VLLM_URL = f"{BASE_URL}/v1/completions"
+VLLM_HEALTH_URL = f"{BASE_URL}/health"
+VLLM_MODELS_URL = f"{BASE_URL}/v1/models"
+MODEL = None  # auto-detected
 
 # 1000-word story prompt
 STORY_PROMPT = """Write a detailed science fiction story about a space explorer discovering an ancient alien civilization on a distant planet. The story should be approximately 1000 words and include:
@@ -48,35 +36,43 @@ def check_vllm_status() -> bool:
     try:
         response = requests.get(VLLM_HEALTH_URL, timeout=5)
         if response.status_code == 200:
-            print("✓ vLLM server is running and healthy")
+            print("✓ Server is running and healthy")
             return True
-        else:
-            print(f"✗ vLLM server returned status code: {response.status_code}")
-            return False
-    except requests.exceptions.ConnectionError:
-        print("✗ Cannot connect to vLLM server at http://localhost:8000")
-        print("  Make sure the docker container is running:")
-        print("  docker ps --filter 'name=vllm'")
-        return False
-    except Exception as e:
-        print(f"✗ Error checking vLLM status: {e}")
-        return False
+    except Exception:
+        pass
+
+    # Fallback: try /v1/models (TRT-LLM may not have /health)
+    try:
+        response = requests.get(VLLM_MODELS_URL, timeout=5)
+        if response.status_code == 200:
+            print("✓ Server is running (/v1/models responded)")
+            return True
+    except Exception:
+        pass
+
+    print(f"✗ Cannot connect to server at {BASE_URL}")
+    print("  Make sure the docker container is running:")
+    print("  docker ps")
+    return False
 
 
 def get_model_info() -> Dict[str, Any]:
-    """Get information about loaded model"""
+    """Get information about loaded model and auto-detect MODEL name"""
+    global MODEL
     print("\n" + "=" * 60)
     print("STEP 2: Getting Model Information")
     print("=" * 60)
 
     try:
-        #response = requests.get("http://localhost:8000/v1/models", timeout=10)
-        response = requests.get("http://localhost:8355/v1/models", timeout=10)
+        response = requests.get(VLLM_MODELS_URL, timeout=10)
         if response.status_code == 200:
             models_data = response.json()
             if models_data.get('data'):
                 model_info = models_data['data'][0]
-                print(f"✓ Model loaded: {model_info.get('id', 'Unknown')}")
+                MODEL = model_info.get('id', None)
+                print(f"✓ Model loaded: {MODEL}")
+                print(f"  API endpoint: {BASE_URL}/v1/chat/completions")
+                print(f"  Model name:   {MODEL}")
                 return model_info
             else:
                 print("✗ No model information available")
@@ -196,13 +192,15 @@ def main():
     if not check_vllm_status():
         print("\n❌ Cannot proceed - vLLM server is not accessible")
         print("\nTroubleshooting steps:")
-        print("1. Check if container is running: docker ps --filter 'name=vllm'")
-        print("2. Check container logs: docker logs vllm")
-        print("3. Ensure port 8000 is exposed and accessible")
+        print("1. Check if container is running: docker ps")
+        print(f"2. Ensure {BASE_URL} is reachable")
         return
 
-    # Step 2: Get model information
+    # Step 2: Get model information (auto-detects MODEL)
     get_model_info()
+    if not MODEL:
+        print("\n❌ Cannot proceed - no model detected")
+        return
 
     # Step 3: Run benchmark
     results = benchmark_tokens_per_second()

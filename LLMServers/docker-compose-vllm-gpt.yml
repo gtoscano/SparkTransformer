@@ -1,0 +1,72 @@
+# Run with: docker compose -f docker-compose-vllm-gpt.yml up
+# Runs on GPU 1, port 8356 — can run alongside docker-compose-vllm.yml (GPU 0, port 8355)
+# Requires patched vLLM (PR #38135) for MXFP4 support on gpt-oss-puzzle-88B
+services:
+  vllm-gpt:
+    image: vllm/vllm-openai:v0.17.1
+    container_name: vllm-gpt
+
+    entrypoint: ["bash", "-c"]
+    command:
+      - |
+        apt-get update && apt-get install -y git &&
+        VLLM_USE_PRECOMPILED=1 pip install --no-build-isolation 'git+https://github.com/vllm-project/vllm.git@refs/pull/38135/head' &&
+        pip install flashinfer-jit-cache==0.6.6+cu129 --extra-index-url https://flashinfer.ai/whl/cu129 || true &&
+        vllm serve nvidia/gpt-oss-puzzle-88B \
+          --host 0.0.0.0 \
+          --port 8000 \
+          --trust-remote-code \
+          --kv-cache-dtype fp8 \
+          --gpu-memory-utilization 0.95 \
+          --max-num-batched-tokens 8192 \
+          --max-num-seqs 8 \
+          --max-cudagraph-capture-size 8 \
+          --max-model-len 8192 \
+          --stream-interval 20 \
+          -tp 1
+
+    ports:
+      - "8356:8000"
+
+    dns:
+      - 1.1.1.1
+      - 8.8.8.8
+
+    network_mode: "bridge"
+
+    ipc: host
+    shm_size: '32gb'
+
+    ulimits:
+      memlock: -1
+      stack: 67108864
+
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: ["1"]
+              capabilities: [gpu, compute, utility]
+
+    environment:
+      - HUGGINGFACE_HUB_TOKEN=${HUGGINGFACE_HUB_TOKEN}
+      - HF_TOKEN=${HUGGINGFACE_HUB_TOKEN}
+      - HF_HOME=/workspace/.cache/huggingface
+      - PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
+      - FLASHINFER_DISABLE_VERSION_CHECK=1
+      - CUDA_DEVICE_ORDER=PCI_BUS_ID
+      - CUDA_VISIBLE_DEVICES=0
+      - NCCL_DEBUG=WARN
+
+    volumes:
+      - ~/.cache/huggingface:/workspace/.cache/huggingface
+
+    restart: unless-stopped
+
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 300s

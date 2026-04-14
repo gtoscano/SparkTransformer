@@ -1,8 +1,9 @@
-# Run with: docker compose -f docker-compose-trt-common.yml up
+# Run with: docker compose -f docker-compose-trt-llama4.yml up
+# Llama 4 Scout 17B-16E NVFP4 on TRT-LLM, GPU 0, port 8355
 services:
-  trtllm-common-server:
+  trtllm-llama4:
     image: nvcr.io/nvidia/tensorrt-llm/release:1.3.0rc10
-    container_name: trtllm_common_server
+    container_name: trtllm_llama4
     command:
       - bash
       - -c
@@ -30,15 +31,18 @@ services:
         reservations:
           devices:
             - driver: nvidia
-              count: all
+              device_ids: ["0"]
               capabilities: [gpu]
     environment:
       - HF_TOKEN=${HUGGINGFACE_HUB_TOKEN}
-      #- MODEL_HANDLE=nvidia/Phi-4-reasoning-plus-FP4
-      - MODEL_HANDLE=RedHatAI/Qwen3-Coder-Next-NVFP4
+      - MODEL_HANDLE=nvidia/Llama-4-Scout-17B-16E-Instruct-NVFP4
     volumes:
       - ${HOME}/.cache/huggingface/:/root/.cache/huggingface/
     ports:
       - "8355:8355"
+    ipc: host
+    shm_size: '32gb'
+    ulimits:
+      memlock: -1
+      stack: 67108864
     restart: unless-stopped
-
