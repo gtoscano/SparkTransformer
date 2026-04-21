@@ -21,6 +21,7 @@ haystack-ai = {extras = ["huggingface"], version = "*"}
 sentence-transformers = "*"
 chromadb = "*"
 pymupdf = "*"
+peft = "*"
 
 [dev-packages]
 

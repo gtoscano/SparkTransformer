@@ -113,7 +113,6 @@ def campus_events(date: str) -> str:
 COURSE_TOOLS = {"lookup_course": lookup_course, "office_hours": office_hours}
 GRADE_TOOLS = {"grade_calculator": grade_calculator, "campus_events": campus_events}
 
-
 def run_specialist(system_prompt, tools_dict, tool_functions, user_text):
     """Run a specialist agent loop with its own tools."""
     messages = [
@@ -141,6 +140,7 @@ def run_specialist(system_prompt, tools_dict, tool_functions, user_text):
             return response
 
         messages.append({"role": "assistant", "content": response})
+
 
         for tc_json in tool_calls:
             try:

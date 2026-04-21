@@ -51,7 +51,6 @@ EVENTS = {
 }
 
 # ── Tools ──────────────────────────────────────────────
-
 def lookup_course(course_id: str) -> str:
     """Look up a course by its ID and return the title, schedule, and room.
 
@@ -61,6 +60,7 @@ def lookup_course(course_id: str) -> str:
     info = COURSES.get(course_id.upper().replace(" ", ""))
     if not info:
         return f"No course found for '{course_id}'. Available: {', '.join(COURSES.keys())}."
+
     return f"{course_id.upper()} — {info['title']}\nSchedule: {info['schedule']}\nRoom: {info['room']}"
 
 

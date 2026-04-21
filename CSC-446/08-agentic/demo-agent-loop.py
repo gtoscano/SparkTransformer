@@ -51,6 +51,29 @@ tool_functions = [calculator, get_student_name]
 # -----------------------------
 # 2. Initial conversation
 # -----------------------------
+# Possible questions to try:
+#
+# Uses calculator only:
+#   "What is 12*(3+4)?"
+#   "Compute 100/4 + 25*2."
+#   "How much is (99+1)*(50-25)?"
+#
+# Uses get_student_name only:
+#   "Who is enrolled in CSC101?"
+#   "Give me the roster for CSC202."
+#   "List the students in LLM500."
+#
+# Uses both tools:
+#   "How many students are listed in LLM500, and what is 12*(3+4)?"
+#   "Who is in CSC101, and what is 7*8?"
+#
+# Uses no tools (answered from general knowledge):
+#   "What does NLP stand for?"
+#   "Explain what a transformer is."
+#
+# Tool returns no results (unknown course):
+#   "Who is enrolled in MATH999?"
+#
 messages = [
     {"role": "system", "content": "You are a helpful teaching assistant. Use tools when needed."},
     {"role": "user", "content": "How many students are listed in LLM500, and what is 12*(3+4)?"}
